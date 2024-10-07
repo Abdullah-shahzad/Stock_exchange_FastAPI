@@ -5,10 +5,7 @@ class StockCreate(BaseModel):
     stock_name: str
     stock_price: float
 
-class StockResponse(BaseModel):
-    ticker: str
-    stock_name: str
-    stock_price: float
-
+class StockResponse(StockCreate):
+    id: int
     class Config:
         orm_mode = True
