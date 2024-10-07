@@ -16,8 +16,6 @@ class Stocks(Base):
     stock_price = Column(Float)
     stock_name = Column(String(40))
 
-    transaction = relationship("Transaction")
-
     class Config:
         from_attributes = True
 

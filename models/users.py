@@ -17,7 +17,5 @@ class Users(Base):
     balance = Column(Float)
 
 
-    transaction = relationship("Transactions")
-
     class Config:
         from_attributes = True
