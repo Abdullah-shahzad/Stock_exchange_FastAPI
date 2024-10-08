@@ -8,4 +8,4 @@ class StockCreate(BaseModel):
 class StockResponse(StockCreate):
     id: int
     class Config:
-        orm_mode = True
+        from_attributes = True

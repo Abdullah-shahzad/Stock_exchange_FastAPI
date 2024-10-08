@@ -12,8 +12,8 @@ class Stocks(Base):
     __tablename__ = 'stocks'
 
     id = Column(Integer, primary_key=True)
-    ticker = Column(String(70), unique=True)
-    stock_price = Column(Float)
+    ticker = Column(String(10), unique=True, nullable=False)
+    stock_price = Column(Float, nullable=False)
     stock_name = Column(String(40))
 
     class Config:

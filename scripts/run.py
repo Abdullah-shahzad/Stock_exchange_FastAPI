@@ -14,12 +14,6 @@ app.include_router(user_routes.user_router)
 app.include_router(stock_routes.router)
 app.include_router(transaction_routes.transaction_router)
 
-users_db = {
-    "testuser": {
-        "username": "testuser",
-        "hashed_password": get_password_hash("password123"),
-    }
-}
 
 
 @app.post("/login")

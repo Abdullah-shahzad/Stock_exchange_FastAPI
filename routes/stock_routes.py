@@ -15,6 +15,9 @@ def create_stock(stock: StockCreate, db: Session = Depends(get_db), current_user
     if existing_stock:
         raise HTTPException(status_code=400, detail="Stock with this ticker already exists")
 
+    if stock.stock_price <= 0:
+        raise HTTPException(status_code=400, detail="Price must be greater than 0")
+
     db_stock = Stocks(
         ticker=stock.ticker,
         stock_name=stock.stock_name,
