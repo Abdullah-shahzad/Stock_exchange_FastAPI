@@ -27,10 +27,14 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db)):
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already exists")
 
+    if user.balance <= 0:
+        raise HTTPException(status_code=400, detail="Balance must be greater than zero")
+
     # Hash the password and create the user
     hashed_password = pwd_context.hash(user.password)
     new_user = Users(
         username=user.username,
+
         hashed_password=hashed_password,
         balance=user.balance
     )
