@@ -6,14 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="7eba5fcd-54cc-44e7-ae87-73447ff16e6a" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/stock.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/stock.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/stock_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/stock_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/transaction_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/transaction_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/user_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/user_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/schemas/stock_schema.py" beforeDir="false" afterPath="$PROJECT_DIR$/schemas/stock_schema.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/schemas/transaction_schema.py" beforeDir="false" afterPath="$PROJECT_DIR$/schemas/transaction_schema.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/schemas/user_schema.py" beforeDir="false" afterPath="$PROJECT_DIR$/schemas/user_schema.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scripts/run.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/run.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -60,7 +53,7 @@
   "keyToString": {
     "Python.transaction_routes.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "monday",
+    "git-widget-placeholder": "tuesday",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -139,7 +132,7 @@
       <workItem from="1728047162324" duration="10340000" />
       <workItem from="1728124049093" duration="180000" />
       <workItem from="1728284753420" duration="17651000" />
-      <workItem from="1728387182971" duration="7593000" />
+      <workItem from="1728387182971" duration="8314000" />
     </task>
     <servers />
   </component>
