@@ -2,26 +2,19 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from common.authentication import get_password_hash, pwd_context, create_access_token, verify_password
+from config.logger import logger
 from models.users import Users
 from schemas.user_schema import UserCreate, UserResponse
 from database.db import get_db
 
 user_router = APIRouter()
 
-
-
-# @user_router.post("/login")
-# async def login(user: UserCreate, db: Session = Depends(get_db)):
-#     db_user = db.query(Users).filter_by(username=user.username).first()
-#     if not db_user or not verify_password(user.password, db_user.hashed_password):
-#         raise HTTPException(status_code=401, detail="Invalid credentials")
-#
-#     access_token = create_access_token(data={"sub": db_user.username})
-#     return {"access_token": access_token, "token_type": "bearer"}
-
-
 @user_router.post("/register")
 async def register_user(user: UserCreate, db: Session = Depends(get_db)):
+    """
+        Creating a new user.
+    """
+    logger.info("Registering new user")
     # Check if the username already exists
     existing_user = db.query(Users).filter_by(username=user.username).first()
     if existing_user:
@@ -54,6 +47,7 @@ async def get_user(username: str, db: Session = Depends(get_db)):
     """
     Retrieves user details by username.
     """
+    logger.info("Retrieving user details by username")
     user = db.query(Users).filter(Users.username == username).first()
 
     if not user:

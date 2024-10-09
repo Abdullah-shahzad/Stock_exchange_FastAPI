@@ -6,7 +6,6 @@ class TransactionBase(BaseModel):
     ticker: str = Field(..., description="Ticker symbol of the stock being transacted")
     transaction_volume: int = Field(..., description="Volume of the stock being transacted")
     transaction_type: str = Field(..., description="Type of transaction: BUY or SELL")
-    transaction_price: float = Field(..., description="Price at which the transaction occurs")
 
 class TransactionCreate(TransactionBase):
     """

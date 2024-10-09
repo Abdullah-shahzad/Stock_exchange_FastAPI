@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from common.authentication import get_current_user
+from config.logger import logger
 from database.db import get_db
 from models.transaction import Transaction
 from models.stock import Stocks
@@ -20,6 +21,7 @@ async def create_transaction(
     """
     Creates a new transaction (buy/sell stocks), checks balance, updates accordingly.
     """
+    logger.info("Creating new transaction ")
     if transaction.transaction_volume <= 0:
         raise HTTPException(status_code=404, detail="Volume must be greater than 0")
 
@@ -77,6 +79,7 @@ async def create_transaction(
 def list_transaction(db: Session = Depends(get_db)):
     list_trans = db.query(Transaction).all()
 
+    logger.info("List all the transactions")
 
     response = []
     for transaction in list_trans:
@@ -106,6 +109,8 @@ async def list_transactions_by_timestamp(
     """
     Lists transactions by username, filtered by start and end timestamp.
     """
+
+    logger.info("Listing transactions by timestamp")
     user = db.query(Users).filter(Users.username == username).first()
 
     if not user:
@@ -129,6 +134,8 @@ async def get_transactions_by_username(username: str, db: Session = Depends(get_
     """
     Retrieve all transactions for a specific user identified by their username.
     """
+    logger.info("Retrieving transactions by username")
+
     user = db.query(Users).filter(Users.username == username).first()
 
     if not user:
