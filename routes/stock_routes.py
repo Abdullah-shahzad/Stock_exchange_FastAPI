@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-
 from common.authentication import get_current_user
 from config.logger import logger
+from config.tasks import notify_new_stock
 from models.stock import Stocks
 from schemas.stock_schema import StockCreate, StockResponse
 from database.db import get_db
@@ -26,6 +26,7 @@ def create_stock(stock: StockCreate, db: Session = Depends(get_db), current_user
         stock_price=stock.stock_price
     )
 
+    notify_new_stock.delay(stock.ticker, stock.stock_name, stock.stock_price)
     db.add(db_stock)
     db.commit()
     db.refresh(db_stock)
