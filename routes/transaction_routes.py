@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from datetime import datetime
+
 from common.authentication import get_current_user
 from config.logger import logger
 from database.db import get_db
@@ -7,45 +7,48 @@ from models.transaction import Transaction
 from models.stock import Stocks
 from models.users import Users
 from schemas.transaction_schema import TransactionCreate, TransactionResponse
-from datetime import datetime
+from fastapi import APIRouter, HTTPException, Depends, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 transaction_router = APIRouter()
 
 
 @transaction_router.post("/transactions", response_model=TransactionResponse, status_code=status.HTTP_201_CREATED)
 async def create_transaction(
-        transaction: TransactionCreate,
-        db: Session = Depends(get_db),
-        current_user: str = Depends(get_current_user)
+    transaction: TransactionCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: str = Depends(get_current_user)
 ):
     """
     Creates a new transaction (buy/sell stocks), checks balance, updates accordingly.
     """
-    logger.info("Creating new transaction ")
+    logger.info("Creating new transaction")
+
     if transaction.transaction_volume <= 0:
-        raise HTTPException(status_code=404, detail="Volume must be greater than 0")
+        raise HTTPException(status_code=400, detail="Volume must be greater than 0")
 
-    if transaction.transaction_type not in ["BUY","SELL","Buy","Sell","sell","buy"]:
-        raise HTTPException(status_code=404, detail="Transaction type must be BUY or SELL")
+    if transaction.transaction_type.lower() not in ["buy", "sell"]:
+        raise HTTPException(status_code=400, detail="Transaction type must be BUY or SELL")
 
-    stock = db.query(Stocks).filter(Stocks.ticker == transaction.ticker).first()
+    # Use async query with select
+    result = await db.execute(select(Stocks).filter(Stocks.ticker == transaction.ticker))
+    stock = result.scalars().first()
     if not stock:
         raise HTTPException(status_code=404, detail="Stock not found")
 
-    # Query user by username
-    user = db.query(Users).filter(Users.username == transaction.username).first()
+    result = await db.execute(select(Users).filter(Users.username == transaction.username))
+    user = result.scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-
-    # Calculate transaction price
     transaction_price = stock.stock_price * transaction.transaction_volume
 
-    if transaction.transaction_type == 'BUY' or 'Buy' or 'buy':
+    if transaction.transaction_type.lower() == 'buy':
         if user.balance < transaction_price:
             raise HTTPException(status_code=400, detail="Insufficient balance")
         user.balance -= transaction_price
-    elif transaction.transaction_type == 'SELL' or 'Sell' or 'sell':
+    else:  # For 'sell'
         user.balance += transaction_price
 
     new_transaction = Transaction(
@@ -56,13 +59,11 @@ async def create_transaction(
         transaction_type=transaction.transaction_type
     )
 
-    # Add and commit the transaction
     db.add(new_transaction)
-    db.commit()
-    db.refresh(new_transaction)
+    await db.commit()
+    await db.refresh(new_transaction)
 
-    # Prepare the response
-    response = TransactionResponse(
+    return TransactionResponse(
         id=new_transaction.id,
         transaction_volume=new_transaction.transaction_volume,
         transaction_type=new_transaction.transaction_type,
@@ -72,30 +73,23 @@ async def create_transaction(
         ticker=stock.ticker
     )
 
-    return response
-
-
 @transaction_router.get("/transactions/", response_model=list[TransactionResponse])
-def list_transaction(db: Session = Depends(get_db)):
-    list_trans = db.query(Transaction).all()
+async def list_transactions(db: AsyncSession = Depends(get_db)):
+    logger.info("Listing all transactions")
+    result = await db.execute(select(Transaction))
+    transactions = result.scalars().all()
 
-    logger.info("List all the transactions")
-
-    response = []
-    for transaction in list_trans:
-        user = db.query(Users).filter(Users.id == transaction.user_id).first()
-        stock = db.query(Stocks).filter(Stocks.id == transaction.ticker_id).first()
-        response.append(TransactionResponse(
+    return [
+        TransactionResponse(
             id=transaction.id,
             transaction_volume=transaction.transaction_volume,
             transaction_type=transaction.transaction_type,
             transaction_price=transaction.transaction_price,
             created_time=transaction.created_time,
-            username=user.username if user else None,  # Handle possible None
-            ticker=stock.ticker if stock else None       # Handle possible None
-        ))
-
-    return response
+            username=(await db.execute(select(Users).filter(Users.id == transaction.user_id))).scalars().first().username,
+            ticker=(await db.execute(select(Stocks).filter(Stocks.id == transaction.ticker_id))).scalars().first().ticker
+        ) for transaction in transactions
+    ]
 
 
 @transaction_router.get("/transactions/{username}/by-date", response_model=list[TransactionResponse],
@@ -104,14 +98,14 @@ async def list_transactions_by_timestamp(
         username: str,
         start_time: str,
         end_time: str,
-        db: Session = Depends(get_db)
+        db: AsyncSession = Depends(get_db)
 ):
     """
     Lists transactions by username, filtered by start and end timestamp.
     """
-
     logger.info("Listing transactions by timestamp")
-    user = db.query(Users).filter(Users.username == username).first()
+    user_query = await db.execute(select(Users).filter(Users.username == username))
+    user = user_query.scalars().first()
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -122,34 +116,38 @@ async def list_transactions_by_timestamp(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format")
 
-    transactions = db.query(Transaction).filter(
-        Transaction.user_id == user.id,  # Filter transactions by user ID
-        Transaction.created_time.between(start_timestamp, end_timestamp)
-    ).all()
+    transactions_query = await db.execute(
+        select(Transaction).filter(
+            Transaction.user_id == user.id,
+            Transaction.created_time.between(start_timestamp, end_timestamp)
+        )
+    )
+    transactions = transactions_query.scalars().all()
 
     return transactions
 
-@transaction_router.get("/transactions/user/{username}", response_model=list[TransactionResponse], status_code=status.HTTP_200_OK)
-async def get_transactions_by_username(username: str, db: Session = Depends(get_db)):
+
+@transaction_router.get("/transactions/user/{username}", response_model=list[TransactionResponse],
+                        status_code=status.HTTP_200_OK)
+async def get_transactions_by_username(username: str, db: AsyncSession = Depends(get_db)):
     """
     Retrieve all transactions for a specific user identified by their username.
     """
     logger.info("Retrieving transactions by username")
-
-    user = db.query(Users).filter(Users.username == username).first()
+    user_query = await db.execute(select(Users).filter(Users.username == username))
+    user = user_query.scalars().first()
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    transactions = db.query(Transaction).filter(Transaction.user_id == user.id).all()
+    transactions_query = await db.execute(select(Transaction).filter(Transaction.user_id == user.id))
+    transactions = transactions_query.scalars().all()
 
     if not transactions:
         raise HTTPException(status_code=404, detail="No transactions found for this user")
 
-
-    response = []
-    for transaction in transactions:
-        response.append(TransactionResponse(
+    return [
+        TransactionResponse(
             id=transaction.id,
             transaction_volume=transaction.transaction_volume,
             transaction_type=transaction.transaction_type,
@@ -157,8 +155,5 @@ async def get_transactions_by_username(username: str, db: Session = Depends(get_
             created_time=transaction.created_time,
             username=user.username,
             ticker=transaction.ticker.ticker
-        ))
-
-    return response
-
-
+        ) for transaction in transactions
+    ]

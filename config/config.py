@@ -1,5 +1,5 @@
 class Settings:
-    SQLALCHEMY_DATABASE_URL = "postgresql+psycopg2://postgres:1499@localhost:5433/stock-exchange-fast-api"
+    DATABASE_URL = "postgresql+asyncpg://postgres:1499@db:5432/stock_exchange_fast_api"
 
 
 settings = Settings()

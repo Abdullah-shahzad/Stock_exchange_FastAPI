@@ -1,25 +1,24 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, NullPool
 from sqlalchemy.ext.declarative import declarative_base
 from config.config import settings
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-SQLALCHEMY_DATABASE_URL = settings.SQLALCHEMY_DATABASE_URL
+
+db_url = settings.DATABASE_URL
 
 
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL
-)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+engine = create_async_engine(db_url, echo=True)
+
+async_session = (sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False
+))
 
 Base = declarative_base()
 
 
-def create_db():
-    Base.metadata.create_all(bind=engine)
-
-
-def get_db():
-    db = SessionLocal()  # Create a new database session
-    try:
-        yield db  # Allow the session to be used in the endpoint
-    finally:
-        db.close()
+async def get_db() -> AsyncSession:
+    async with async_session() as session:
+        yield session
